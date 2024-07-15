@@ -1,5 +1,5 @@
 import app from "./app.js";
-
+import dotenv from 'dotenv'
 import cloudinary from 'cloudinary'
 
 
@@ -9,6 +9,9 @@ cloudinary.v2.config({
     api_secret: process.env.CLOUDINAY_API_SECRET ,
 })
 
-app.listen(process.env.PORT, ()=>{
-    console.log(`server listning at ${process.env.PORT}`);
+dotenv.config({path:"./config/config.env"});
+const PORTS = process.env.PORT || 4000;
+app.listen(PORTS, ()=>{
+    console.log(`server listning at ${PORTS}`);
 });
+

@@ -6,6 +6,7 @@ import fileUpload from "express-fileupload";
 import dbConnection from "./database/dbConnection.js";
 import {errormiddleware} from "./middlewares/error.js"
 import messagerouter from "./router/messagerouter.js"
+import userrouter from "./router/userrouter.js"
 
 
 
@@ -22,15 +23,16 @@ app.use(
 );
 
 app.use(cookieParser());
-app.use(express.json);
+app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(fileUpload({
     useTempFiles:true,
-    tempFileDir:"/temp",
+    tempFileDir:"/tmp/",
 })
 );
-// app.use(express.json()); 
+
 app.use("/api/v1/message", messagerouter)
+app.use("/api/v1/user", userrouter)
 
 dbConnection();
 app.use(errormiddleware);
