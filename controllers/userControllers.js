@@ -2,12 +2,13 @@ import { catchAsynError } from "../middlewares/catchAsyncError.js";
 import ErrorHandler from "../middlewares/error.js";
 import { User } from "../models/usermodel.js";
 import { v2 as cloudinary } from "cloudinary";
+import { generateToken } from "../utils/jwtTokenUtils.js";
 
 export const register = catchAsynError(async (req, res, next) => {
   if (!req.files || Object.keys(req.files).length === 0) {
     return next(new ErrorHandler("Avtar, resume are required !", 400));
   }
-
+  
   const { avtar, resume } = req.files;
 
   const cloudinaryResForAvtar = await cloudinary.uploader.upload(
@@ -66,9 +67,31 @@ export const register = catchAsynError(async (req, res, next) => {
     },
 
   });
-  res.status(200).json({
-    success:true,
-    message:"User Register successfully"
-  }); 
+  
+  generateToken(user, "registered succsefully!", 201, res);
 
 });
+
+
+export const login = catchAsynError(async(req,res, next)=>{
+  const {email, password} = req.body
+
+  if(!email || !password){
+    return next (new ErrorHandler("Email and password are required!!"));
+  }
+
+  const user = await User.findOne({email}).select("+password")
+  
+  if(!user){
+    return next(new ErrorHandler("Opps user not found!! register "));
+  }
+
+  const isPasswordMatch = await user.comparePassword(password);
+
+  if(!isPasswordMatch){
+    return next(new ErrorHandler("Opps please check email and password again"))
+  }
+
+  generateToken(user, "Logged In", 200, res);
+
+})
