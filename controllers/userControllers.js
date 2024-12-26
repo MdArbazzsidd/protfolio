@@ -5,7 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { generateToken } from "../utils/jwtTokenUtils.js";
 import { sendEmail } from "../utils/sendEmailUtils.js";
 import crypto from "crypto"
-import { error } from "console";
+
 
 export const register = catchAsynError(async (req, res, next) => {
   if (!req.files || Object.keys(req.files).length === 0) {
@@ -176,9 +176,9 @@ export const updateProfile = catchAsynError(async(req,res,next)=>{
 })
 
 export const updatePassword= catchAsynError(async(req,res,next)=>{
-  const {currentPassword, newPassword, conformPassword}= req.body
+  const {currentPassword, newPassword, confirmPassword }= req.body
   
-  if(!currentPassword || !newPassword || !conformPassword){
+  if(!currentPassword || !newPassword || !confirmPassword ){
     return next(new ErrorHandler("please enter the required fileds", 400))
   }
 
@@ -190,8 +190,8 @@ export const updatePassword= catchAsynError(async(req,res,next)=>{
     return next(new ErrorHandler("incorrect current password try again", 400));
   }
 
-  if(newPassword !== conformPassword){
-    return next(new ErrorHandler("doesn't match with conformpassword", 400))
+  if(newPassword !== confirmPassword ){
+    return next(new ErrorHandler("doesn't match with confirmPassword ", 400))
   }
 
   user.password= newPassword;
@@ -222,7 +222,9 @@ export const forgetPassword = catchAsynError(async(req,res,next)=>{
   }
 
   const resetToken= user.getResetPasswordToken();
-  await user.save({validateBeforeSave:false})
+  await user.save({ validateBeforeSave: false });
+ 
+  console.log("user", user)
   const resetPasswordUrl= `${process.env.DASHBOARD_URL}/password/reset/${resetToken}`
 
   const message= `your reset password token is:- \n\n ${resetPasswordUrl} \n\n if you've not request for this please ignore it`;
@@ -252,19 +254,19 @@ export const resetPassword= catchAsynError(async(req,res,next)=>{
 
   const user = await User.findOne({
     resetPasswordToken,
-    resetPasswordExpire:{$gt : Date.now()}
+    tokenExpired: { $ne: true },
   })
 
   if(!user){
     return next( new ErrorHandler("reset password token is invalid or expired!", 400))
   }
 
-  if(req.body.password !== req.body.conformPassword){
+  if(req.body.password !== req.body.confirmPassword ){
     return next(new ErrorHandler("password are not match try again!"))
   }
 
   user.password=req.body.password;
-  user.restPasswordExpire=undefined;
+  user.resetPasswordExpire=undefined;
   user.resetPasswordToken=undefined;
 
   await user.save();

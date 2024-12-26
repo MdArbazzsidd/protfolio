@@ -63,7 +63,7 @@ const userSchema = new mongoose.Schema({
     instagramurl:String,
     linkedInurl : String,
     resetPasswordToken:String,
-    restPasswordExpire: Date,
+    resetPasswordExpire: Date,
 
 },{timestamps:true})
 
@@ -91,8 +91,11 @@ userSchema.methods.getResetPasswordToken = function(){
     const resetToken= crypto.randomBytes(20).toString("hex");
 
     this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    
+    this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+    console.log("Reset Password Expire:", new Date(this.resetPasswordExpire));
 
-    this.restPasswordExpire= Date.now() + 15 * 60 * 1000;
+    
     return resetToken
 }
 
