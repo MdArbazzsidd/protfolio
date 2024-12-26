@@ -7,6 +7,7 @@ import dbConnection from "./database/dbConnection.js";
 import {errormiddleware} from "./middlewares/error.js"
 import messagerouter from "./router/messagerouter.js"
 import userrouter from "./router/userrouter.js"
+import { deleteMessage } from "./controllers/messageControllers.js";
 
 
 
@@ -33,6 +34,7 @@ app.use(fileUpload({
 
 app.use("/api/v1/message", messagerouter)
 app.use("/api/v1/user", userrouter)
+
 
 dbConnection();
 app.use(errormiddleware);

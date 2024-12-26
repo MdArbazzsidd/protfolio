@@ -3,6 +3,7 @@ import ErrorHandler from "../middlewares/error.js";
 import { User } from "../models/usermodel.js";
 import { v2 as cloudinary } from "cloudinary";
 import { generateToken } from "../utils/jwtTokenUtils.js";
+import { sendEmail } from "../utils/sendEmailUtils.js";
 
 export const register = catchAsynError(async (req, res, next) => {
   if (!req.files || Object.keys(req.files).length === 0) {
@@ -104,4 +105,141 @@ export const logout = catchAsynError(async(req,res,next)=>{
     success:true,
     message:"you are logout!"
   })
+})
+
+export const getUser = catchAsynError(async(req,res,next)=>{
+  const user = await User.findById(req.user.id);
+  res.status(200).json({
+    success:true,
+    user,
+  })
+})
+
+export const updateProfile = catchAsynError(async(req,res,next)=>{
+  const newUserData= {
+    fullname: req.body.fullname,
+    email:req.body.email,
+    phone: req.body.phone,
+    aboutme: req.body.aboutme,
+    portfolioURL: req.body.portfolioURL,
+    githuburl: req.body.githuburl,
+    instagramurl: req.body.instagramurl,
+    linkedInurl: req.body.linkedInurl,
+  };
+
+  if(req.files && req.files.avtar){
+    const avtar= req.files.avtar;
+    const user= await User.findById(req.user.id);
+    const profileImageId = user.avtar.public_id;
+    await cloudinary.uploader.destroy(profileImageId);
+    const cloudinaryResponse = await cloudinary.uploader.upload(
+      avtar.tempFilePath,
+      {folder:"Avtars"}
+    );
+
+    newUserData.avtar={
+      public_id: cloudinaryResponse.public_id,
+      url: cloudinaryResponse.secure_url,
+    };
+  }
+
+  if(req.files && req.files.resume){
+    const resume= req.files.resume;
+    const user= await User.findById(req.user.id);
+    const ResumeId = user.resume.public_id;
+    await cloudinary.uploader.destroy(ResumeId);
+    const cloudinaryResponse = await cloudinary.uploader.upload(
+      resume.tempFilePath,
+      {folder:"Resume"}
+    );
+
+    newUserData.resume={
+      public_id: cloudinaryResponse.public_id,
+      url: cloudinaryResponse.secure_url,
+    };
+  }
+
+  const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
+    new:true,
+    runValidators:true,
+    useFindAndModify:false,
+  });
+
+  res.status(200).json({
+    success:true,
+    message:"profile updated",
+    user,
+  })
+
+})
+
+export const updatePassword= catchAsynError(async(req,res,next)=>{
+  const {currentPassword, newPassword, conformPassword}= req.body
+  
+  if(!currentPassword || !newPassword || !conformPassword){
+    return next(new ErrorHandler("please enter the required fileds", 400))
+  }
+
+  const user= await User.findById(req.user.id).select("+password");
+
+  const isPasswordMatch = await user.comparePassword(currentPassword)
+
+  if(!isPasswordMatch){
+    return next(new ErrorHandler("incorrect current password try again", 400));
+  }
+
+  if(newPassword !== conformPassword){
+    return next(new ErrorHandler("doesn't match with conformpassword", 400))
+  }
+
+  user.password= newPassword;
+  user.save();
+
+  res.status(200).json({
+    success:true,
+    message:"password changed successfully"
+  })
+
+})
+
+export const getUserPortfolio = catchAsynError(async(req,res,next)=>{
+  const id="67693fadab88e0493b60f469";
+  const user = await User.findById(id)
+
+  res.status(200).json({
+    success:true,
+    user,
+  })
+})
+
+export const forgetPassword = catchAsynError(async(req,res,next)=>{
+  const user = await User.findOne({email: req.body.email});
+
+  if(!user){
+    return next(new ErrorHandler("user not found try again!", 404));
+  }
+
+  const resetToken= user.getResetPasswordToken();
+  await user.save({validateBeforeSave:false})
+  const resetPasswordUrl= `${process.env.DASHBOARD_URL}/password/reset/${resetToken}`
+
+  const message= `your reset password token is:- \n\n ${resetPasswordUrl} \n\n if you've not request for this please ignore it`;
+
+  try{
+    await sendEmail({
+      email: user.email,
+      subject:"personal protfolio dashborad recovery password",
+      message, 
+    });
+    res.status(200).json({
+      success:true,
+      message:`email sent to ${user.email} successfully! `
+    });
+  }
+  catch(error){
+    user.restPasswordExpire= undefined;
+    user.resetPasswordToken= undefined;
+    await user.save();
+    return next(new ErrorHandler(error.message, 500))
+  }
 })

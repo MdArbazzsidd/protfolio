@@ -28,7 +28,7 @@ export const errormiddleware = (err,req,res,next)=>{
     const message = `invalid ${err.path}`;
     err = new ErrorHandler(message,400)
    }
-
+  
    const errorMessage = err.errors
    ?Object.values(err.errors)
    .map((error) => error.message)

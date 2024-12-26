@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken"
 
 export const isAuthenticated = catchAsynError(async(req, res, next)=>{
     const {token} = req.cookies;
-
+    console.log(req.cookies)
     if(!token){
         return next(new ErrorHandler("Opps user is not authenticated sorry!!", 400));
     }

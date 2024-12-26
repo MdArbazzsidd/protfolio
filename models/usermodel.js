@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken"
+import crypto from "crypto"
 
 const userSchema = new mongoose.Schema({
 
@@ -46,7 +47,7 @@ const userSchema = new mongoose.Schema({
     resume:{
         public_id:{
             type:String,
-            required:true,
+            required:[true, "you have to enter resume"]
         },
         url:{
             type:String,
@@ -61,7 +62,6 @@ const userSchema = new mongoose.Schema({
     githuburl:String,
     instagramurl:String,
     linkedInurl : String,
-
     resetPasswordToken:String,
     restPasswordExpire: Date,
 
@@ -79,10 +79,21 @@ userSchema.methods.comparePassword = async function(enterdPassword){
     return await bcrypt.compare(enterdPassword,this.password);
 }
 
-userSchema.methods.genrateJsonWebToken = async function(){
-    return jwt.sign({id:this._id}, process.env.JWT_SECRET_KEY, {
-        expiresIn:process.env.JWT_EXPIRES
-    })
+userSchema.methods.generateJsonWebToken = function() {
+    const token = jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
+        expiresIn: process.env.JWT_EXPIRES,
+    });
+    console.log("Generated Token: ", token);  // Add this line to log the token
+    return token;
+};
+
+userSchema.methods.getResetPasswordToken = function(){
+    const resetToken= crypto.randomBytes(20).toString("hex");
+
+    this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    this.restPasswordExpire= Date.now() + 15 * 60 * 1000;
+    return resetToken
 }
 
 export const User = mongoose.model("User", userSchema);
