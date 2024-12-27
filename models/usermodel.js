@@ -83,7 +83,7 @@ userSchema.methods.generateJsonWebToken = function() {
     const token = jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
         expiresIn: process.env.JWT_EXPIRES,
     });
-    console.log("Generated Token: ", token);  // Add this line to log the token
+    // console.log("Generated Token: ", token);  // Add this line to log the token
     return token;
 };
 
