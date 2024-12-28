@@ -9,6 +9,7 @@ import messagerouter from "./router/messagerouter.js"
 import userrouter from "./router/userrouter.js"
 import timelineRouter from "./router/timelinerouter.js"
 import softwareApplicationrouters from "./router/softwareApplicationrouters.js"
+import skillRouter from "./router/skilsrouter.js"
 
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/v1/message", messagerouter)
 app.use("/api/v1/user", userrouter)
 app.use("/api/v1/timeline",timelineRouter)
 app.use("/api/v1/softwareApplication",softwareApplicationrouters)
+app.use("/api/v1/skill", skillRouter)
 
 dbConnection();
 app.use(errormiddleware);
